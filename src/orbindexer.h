@@ -5,10 +5,11 @@
 class OrbIndexer: public Nan::ObjectWrap {
 public:
   static Nan::Persistent<FunctionTemplate> constructor;
+  static NAN_METHOD(New);
   static void Init(Local<Object> target);
   static NAN_METHOD(IndexImage);
   static NAN_METHOD(InitWordIndex);
-  static ORBWordIndex * wordIndex;
+  ORBWordIndex * wordIndex;
 private:
   static const char * ToCString(const String::Utf8Value& str);
 };

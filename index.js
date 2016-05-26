@@ -3,7 +3,7 @@ const fs = require('fs');
 const defaults = require('lodash.defaults');
 const Promise = require('bluebird');
 
-const nativeOrbIndexer = require('./build/Release/orbidx');
+const NativeOrbIndexer = require('./build/Release/orbidx');
 
 var default_options = {
   nfeatures: 2000,
@@ -25,6 +25,7 @@ var OrbIndexer = function (options) {
   options = defaults(options, default_options);
   options.wordIndexPath = options.wordIndexPath || path.resolve(path.join(__dirname, 'data', 'visualWordsORB.dat'));
   this.options = options;
+  this.orbIndexer = new NativeOrbIndexer.OrbIndexer();
 }
 
 OrbIndexer.prototype = {
@@ -32,7 +33,7 @@ OrbIndexer.prototype = {
     var _this = this;
     return new Promise(function (resolve, reject) {
       try {
-        nativeOrbIndexer.initWordIndex(function (err, res) {
+        _this.orbIndexer.initWordIndex(function (err, res) {
           if (err) {
             return reject(new Error(err));
           }
@@ -64,25 +65,25 @@ OrbIndexer.prototype = {
     var _this = this;
     return new Promise(function (resolve, reject) {
       try {
-        nativeOrbIndexer.indexImage(function (err, hits) {
-          if (err) {
-            return reject(new Error(err));
-          }
-          resolve(hits);
-        }, imageId, imageBuffer, imageBuffer.length,
-        _this.options.nfeatures,
-        _this.options.scaleFactor,
-        _this.options.nlevels,
-        _this.options.edgeThreshold,
-        _this.options.firstLevel,
-        _this.options.WTA_K,
-        _this.options.scoreType,
-        _this.options.patchSize,
-        _this.options.fastThreshold,
-        _this.options.maxKeypoints,
-        _this.options.gridRows,
-        _this.options.gridCols
-      );
+        _this.orbIndexer.indexImage(function (err, hits) {
+            if (err) {
+              return reject(new Error(err));
+            }
+            resolve(hits);
+          }, imageId, imageBuffer, imageBuffer.length,
+          _this.options.nfeatures,
+          _this.options.scaleFactor,
+          _this.options.nlevels,
+          _this.options.edgeThreshold,
+          _this.options.firstLevel,
+          _this.options.WTA_K,
+          _this.options.scoreType,
+          _this.options.patchSize,
+          _this.options.fastThreshold,
+          _this.options.maxKeypoints,
+          _this.options.gridRows,
+          _this.options.gridCols
+        );
       } catch (err) {
         reject(err);
       }

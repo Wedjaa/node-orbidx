@@ -5,25 +5,50 @@
 #include <stdio.h>
 
 void OrbIndexer::Init(Local<Object> target) {
-  Nan::SetMethod(target, "indexImage", IndexImage);
-  Nan::SetMethod(target, "initWordIndex", InitWordIndex);
-}
 
-ORBWordIndex * OrbIndexer::wordIndex;
+
+  Local<FunctionTemplate> ctor = Nan::New<FunctionTemplate>(OrbIndexer::New);
+  constructor.Reset(ctor);
+  ctor->InstanceTemplate()->SetInternalFieldCount(1);
+  ctor->SetClassName(Nan::New("OrbIndexer").ToLocalChecked());
+
+  Nan::SetPrototypeMethod(ctor, "indexImage", IndexImage);
+  Nan::SetPrototypeMethod(ctor, "initWordIndex", InitWordIndex);
+
+  target->Set(Nan::New("OrbIndexer").ToLocalChecked(), ctor->GetFunction());
+}
 
 const char* OrbIndexer::ToCString(const String::Utf8Value& value) {
   return *value ? *value : "<string conversion failed>";
+}
+
+Nan::Persistent<FunctionTemplate> OrbIndexer::constructor;
+
+NAN_METHOD(OrbIndexer::New) {
+  Nan::HandleScope scope;
+  std::cerr << "Creating new instance of OrbIndexer" << std::endl;
+  if (!info.IsConstructCall())
+    return Nan::ThrowError("Use `new` to create instances of this object");
+
+  OrbIndexer * orbIndexer = new OrbIndexer();
+  orbIndexer->wordIndex = NULL;
+  orbIndexer->Wrap(info.This());
+
+  info.GetReturnValue().Set(info.This());
 }
 
 class AsyncIndexImage: public Nan::AsyncWorker {
 
 public:
 
-  AsyncIndexImage(Nan::Callback *callback, std::string str_imageId, unsigned char * buff_imageData, unsigned int i_imageSize) :
+  AsyncIndexImage(Nan::Callback *callback, std::string str_imageId,
+            unsigned char * buff_imageData, unsigned int i_imageSize,
+            ORBWordIndex * wordIndex) :
       Nan::AsyncWorker(callback),
       str_imageId(str_imageId),
       buff_imageData(buff_imageData),
       i_imageSize(i_imageSize),
+      wordIndex(wordIndex),
       success(false) {
 
   }
@@ -127,7 +152,7 @@ public:
           std::vector<int> indices(1);
           std::vector<int> dists(1);
 
-          OrbIndexer::wordIndex->knnSearch(descriptors.row(i), indices, dists, 1);
+          wordIndex->knnSearch(descriptors.row(i), indices, dists, 1);
 
           for (unsigned j = 0; j < indices.size(); ++j)
           {
@@ -174,6 +199,7 @@ private:
   std::string str_imageId;
   unsigned char * buff_imageData;
   unsigned int i_imageSize;
+  ORBWordIndex * wordIndex;
   bool success;
   const char *err_msg;
   std::list<HitForward> imageHits;
@@ -189,6 +215,13 @@ NAN_METHOD(OrbIndexer::IndexImage) {
   if (info.Length() < 4) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    return;
+  }
+
+  OrbIndexer * orbIndexer = Nan::ObjectWrap::Unwrap<OrbIndexer>(info.This());
+  if (orbIndexer->wordIndex == NULL) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "ORB Indexer has not been initialized")));
     return;
   }
 
@@ -259,7 +292,7 @@ NAN_METHOD(OrbIndexer::IndexImage) {
     gridCols = info[15]->IntegerValue();
   }
 
-  AsyncIndexImage * asyncDetect = new AsyncIndexImage(callback, image_id, image_buffer, image_size);
+  AsyncIndexImage * asyncDetect = new AsyncIndexImage(callback, image_id, image_buffer, image_size, orbIndexer->wordIndex);
 
   asyncDetect->setupExtractor(
     nfeatures,
@@ -338,15 +371,11 @@ private:
 
     Isolate * isolate = info.GetIsolate();
 
+    OrbIndexer * orbIndexer = Nan::ObjectWrap::Unwrap<OrbIndexer>(info.This());
+
     if (info.Length() < 1) {
       isolate->ThrowException(Exception::TypeError(
           String::NewFromUtf8(isolate, "Wrong number of arguments")));
-      return;
-    }
-
-    if (OrbIndexer::wordIndex != NULL) {
-      isolate->ThrowException(Exception::TypeError(
-          String::NewFromUtf8(isolate, "ORB Work Index Already Initialized!")));
       return;
     }
 
@@ -354,8 +383,8 @@ private:
     Nan::Callback *callback = new Nan::Callback(cb.As<Function>());
     String::Utf8Value utf_path(info[1]);
     std::string index_path =  ToCString(utf_path);
-    OrbIndexer::wordIndex = new ORBWordIndex();
-    AsyncWordIndexInitializer * asyncWordIndexInit = new AsyncWordIndexInitializer(callback, index_path, OrbIndexer::wordIndex);
+    orbIndexer->wordIndex = new ORBWordIndex();
+    AsyncWordIndexInitializer * asyncWordIndexInit = new AsyncWordIndexInitializer(callback, index_path, orbIndexer->wordIndex);
     Nan::AsyncQueueWorker(asyncWordIndexInit);
     return;
   }
