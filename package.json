@@ -1,0 +1,15 @@
+{
+  "name": "node-orbidx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.4.0",
+    "nan": "^2.3.3"
+  }
+}
