@@ -33,7 +33,8 @@ public:
   }
 
   void setupExtractor(int nfeatures, double scaleFactor, int nlevels, int edgeThreshold,
-    int firstLevel, int WTA_K, int scoreType, int patchSize, int maxKeypoints, int gridRows, int gridCols) {
+    int firstLevel, int WTA_K, int scoreType, int patchSize, int fastThreshold,
+    int maxKeypoints, int gridRows, int gridCols) {
     orbDetector = new cv::ORB(
             nfeatures,
             scaleFactor,
@@ -43,6 +44,7 @@ public:
             WTA_K,
             scoreType,
             patchSize
+            // --> 3 ,fastThreshold
     );
 
     gridDetector = new cv::GridAdaptedFeatureDetector(orbDetector, maxKeypoints, gridRows, gridCols);
@@ -111,8 +113,6 @@ public:
       orbDetector->compute(inputImage, keypoints, descriptors);
 
       unsigned i_nbKeyPoints = 0;
-
-      std::cerr << "Processing the hits" << std::endl;
 
       std::unordered_set<u_int32_t> matchedWords;
       for (unsigned i = 0; i < keypoints.size(); ++i)
@@ -204,9 +204,9 @@ NAN_METHOD(OrbIndexer::IndexImage) {
     nfeatures = info[4]->IntegerValue();
   }
 
-  float scaleFactor=1.02f;
+  float scaleFactor=1.2f;
   if ( info.Length() >= 6 ) {
-    nfeatures = info[5]->NumberValue();
+    scaleFactor = info[5]->NumberValue();
   }
 
   int nlevels=100;
@@ -239,19 +239,24 @@ NAN_METHOD(OrbIndexer::IndexImage) {
     patchSize = info[11]->IntegerValue();
   }
 
-  int maxKeypoints=2000;
+  int fastThreshold=20;
   if ( info.Length() >= 13 ) {
-    patchSize = info[12]->IntegerValue();
+    fastThreshold = info[12]->IntegerValue();
+  }
+
+  int maxKeypoints=2000;
+  if ( info.Length() >= 14 ) {
+    maxKeypoints = info[13]->IntegerValue();
   }
 
   int gridRows=8;
-  if ( info.Length() >= 14 ) {
-    patchSize = info[13]->IntegerValue();
+  if ( info.Length() >= 15 ) {
+    gridRows = info[14]->IntegerValue();
   }
 
   int gridCols=8;
-  if ( info.Length() >= 15 ) {
-    patchSize = info[14]->IntegerValue();
+  if ( info.Length() >= 16 ) {
+    gridCols = info[15]->IntegerValue();
   }
 
   AsyncIndexImage * asyncDetect = new AsyncIndexImage(callback, image_id, image_buffer, image_size);
@@ -265,6 +270,7 @@ NAN_METHOD(OrbIndexer::IndexImage) {
     WTA_K,
     scoreType,
     patchSize,
+    fastThreshold,
     maxKeypoints,
     gridRows,
     gridCols
@@ -298,12 +304,12 @@ public:
         error_message  += indexPath;
         error_message += "]: ";
         error_message += ORBWordIndex::messages[res];
-        std::cerr << "Error message: " << error_message.c_str() << "\n";
+        std::cerr << "Error: " << error_message.c_str() << "\n";
         return;
       }
       success = true;
     } catch (cv::Exception &e) {
-      std::cerr << "Cought Error: " << e.what() << std::endl;
+      std::cerr << "Error: " << e.what() << std::endl;
       error_message = e.what();
       return;
     }

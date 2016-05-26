@@ -4,6 +4,24 @@ const OrbIndexer = require('../index.js');
 
 var orbIndexer = new OrbIndexer();
 
+var testImage = path.resolve(path.join(__dirname, 'image/windmill-1.jpg'));
+
+orbIndexer.initialize()
+  .then(function(wordIndexPath) {
+      console.log('Initialized: ' + wordIndexPath);
+      return orbIndexer.indexImageFile('sample', testImage);
+  })
+  .then(function(imageWords) {
+      console.log('Image Words - From file: \n' + JSON.stringify(imageWords, null, 2));
+      return orbIndexer.indexImage('sample', new Buffer(fs.readFileSync(testImage)));
+  })
+  .then(function(imageWords) {
+    console.log('Image Words - From file: \n' + JSON.stringify(imageWords, null, 2));
+  })
+  .catch(function(error) {
+    console.log('Error: ' + error.message);
+  });
+
 /*
 function loadImage(imageName) {
   return new Buffer(fs.readFileSync(imageName));
