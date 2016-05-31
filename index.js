@@ -16,9 +16,9 @@ var default_options = {
   patchSize: 15,
   fastThreshold: 20,
   maxKeypoints: 2000, // Max number of keypoints in the grid
-  gridRows: 8, // Grid Based Features - to make sure they are
-  gridCols: 8 // distributed in the image; use 1x1 to have the
-    // usual distribution
+  gridRows: 1,  // Grid Based Features - to make sure they are
+  gridCols: 1   // distributed in the image; use 1x1 to have the
+                // usual distribution
 }
 
 var OrbIndexer = function (options) {
@@ -35,11 +35,13 @@ OrbIndexer.prototype = {
       try {
         _this.orbIndexer.initWordIndex(function (err, res) {
           if (err) {
+            console.log('Error: ' + err);
             return reject(new Error(err));
           }
           return resolve(_this.options.wordIndexPath);
         }, _this.options.wordIndexPath);
       } catch (err) {
+        console.log('Error: ' + err.message);
         reject(err);
       }
     });
@@ -84,6 +86,74 @@ OrbIndexer.prototype = {
           _this.options.gridRows,
           _this.options.gridCols
         );
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
+  startTraining: function() {
+    return this.orbIndexer.startTraining();
+  },
+  trainImageFile: function (imagePath) {
+    var _this = this;
+    return _this._loadImageFile(imagePath)
+      .then(function (imageData) {
+        return _this.trainImage(imageData);
+      });
+  },
+  trainImage: function(imageBuffer) {
+    var _this = this;
+    return new Promise(function (resolve, reject) {
+      try {
+        _this.orbIndexer.trainImage(function (err, hits) {
+            if (err) {
+              return reject(new Error(err));
+            }
+            resolve(hits);
+          }, imageBuffer, imageBuffer.length,
+          _this.options.nfeatures,
+          _this.options.scaleFactor,
+          _this.options.nlevels,
+          _this.options.edgeThreshold,
+          _this.options.firstLevel,
+          _this.options.WTA_K,
+          _this.options.scoreType,
+          _this.options.patchSize,
+          _this.options.fastThreshold,
+          _this.options.maxKeypoints,
+          _this.options.gridRows,
+          _this.options.gridCols
+        );
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
+  saveTrainedIndex: function(trainingFile) {
+    var _this = this;
+    return new Promise(function (resolve, reject) {
+      try {
+        _this.orbIndexer.saveTraining(function (err, result) {
+            if (err) {
+              return reject(new Error(err));
+            }
+            resolve(result);
+          }, trainingFile);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
+  loadTrainedIndex: function(trainingFile) {
+    var _this = this;
+    return new Promise(function (resolve, reject) {
+      try {
+        _this.orbIndexer.loadTraining(function (err, result) {
+            if (err) {
+              return reject(new Error(err));
+            }
+            resolve(result);
+          }, trainingFile);
       } catch (err) {
         reject(err);
       }

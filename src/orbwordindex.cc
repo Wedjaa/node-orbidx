@@ -1,23 +1,23 @@
 /*****************************************************************************
- * Copyright (C) 2014 Visualink
- *
- * Authors: Adrien Maglo <adrien@visualink.io>
- *
- * This file is part of Pastec.
- *
- * Pastec is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Pastec is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Pastec.  If not, see <http://www.gnu.org/licenses/>.
- *****************************************************************************/
+* Copyright (C) 2014 Visualink
+*
+* Authors: Adrien Maglo <adrien@visualink.io>
+*
+* This file is part of Pastec.
+*
+* Pastec is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Pastec is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with Pastec.  If not, see <http://www.gnu.org/licenses/>.
+*****************************************************************************/
 
 #include <iostream>
 #include <fstream>
@@ -30,44 +30,113 @@ using namespace std;
 
 ORBWordIndex::ORBWordIndex()
 {
-    words = new Mat(0, 32, CV_8U); // The matrix that stores the visual words.
+        words = new Mat(0, 32, CV_8U); // The matrix that stores the visual words.
+        kdIndex = NULL;
 }
 
 
 ORBWordIndex::~ORBWordIndex()
 {
-    delete words;
-    delete kdIndex;
+        delete words;
+        if (kdIndex!=NULL) {
+                delete kdIndex;
+        }
+}
+
+bool ORBWordIndex::isTraining() {
+  return training;
+}
+
+int ORBWordIndex::startTraining() {
+        if (training) {
+                return ALREADY_TRAINING;
+        }
+        // Release existing words
+        delete words;
+        // ..and create a new empty words list
+        words = new Mat(0, 32, CV_8U);
+
+        training = true;
+        return SUCCESS;
+}
+
+bool ORBWordIndex::wordPresent(Mat word) {
+        for (int word_idx = 0; word_idx<words->rows; word_idx++) {
+                if ( cv::countNonZero(word!=words->row(word_idx)) == 0) {
+                        return true;
+                }
+        }
+        return false;
+}
+
+u_int32_t ORBWordIndex::addTrainingFeatures(Mat training_features) {
+        int added_features = 0;
+        for (int feature_idx = 0; feature_idx<training_features.rows; feature_idx++) {
+                Mat feature = training_features.row(feature_idx);
+                if (!wordPresent(feature)) {
+                  words->push_back(feature);
+                  added_features++;
+                }
+        }
+        return added_features;
+}
+
+int ORBWordIndex::endTraining(string visualWordsPath) {
+
+        if (!training) {
+                return NOT_TRAINING;
+        }
+
+        if (kdIndex!=NULL) {
+                delete kdIndex;
+        }
+
+        cvflann::Matrix<unsigned char> m_features
+                ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
+
+        kdIndex = new cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> >
+                          (m_features,cvflann::HierarchicalClusteringIndexParams(10, cvflann::FLANN_CENTERS_RANDOM, 8, 100));
+
+        kdIndex->buildIndex();
+
+        training = false;
+
+        if (!saveVisualWords(visualWordsPath)) {
+                return SAVE_FAILED;
+        }
+
+        return SUCCESS;
 }
 
 int ORBWordIndex::initialize(string visualWordsPath, int numberOfWords) {
 
-  if (!readVisualWords(visualWordsPath))
-      return WORD_DB_FILE_MISSING;
+        if (!readVisualWords(visualWordsPath))
+                return WORD_DB_FILE_MISSING;
 
-  if (words->rows != numberOfWords) {
-    return WORD_DB_WRONG_ROW_SIZE;
-  }
+        if (numberOfWords>0 && words->rows != numberOfWords) {
+                return WORD_DB_WRONG_ROW_SIZE;
+        }
 
-  cout << "Building the word index." << endl;
+        cvflann::Matrix<unsigned char> m_features
+                ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
 
-  cvflann::Matrix<unsigned char> m_features
-          ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
-  kdIndex = new cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> >
-          (m_features,cvflann::HierarchicalClusteringIndexParams(10, cvflann::FLANN_CENTERS_RANDOM, 8, 100));
-  kdIndex->buildIndex();
-  return SUCCESS;
+        kdIndex = new cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> >
+                          (m_features,cvflann::HierarchicalClusteringIndexParams(10, cvflann::FLANN_CENTERS_RANDOM, 8, 100));
+
+        kdIndex->buildIndex();
+
+        return SUCCESS;
 }
 
 void ORBWordIndex::knnSearch(const Mat& query, vector<int>& indices,
-                          vector<int>& dists, int knn)
+                             vector<int>& dists, int knn, u_int16_t search_params)
 {
-    cvflann::KNNResultSet<int> m_indices(knn);
+        cvflann::KNNResultSet<int> m_indices(knn);
 
-    m_indices.init(indices.data(), dists.data());
+        m_indices.init(indices.data(), dists.data());
 
-    kdIndex->findNeighbors(m_indices, (unsigned char*)query.ptr<unsigned char>(0),
-                           cvflann::SearchParams(2000));
+        kdIndex->findNeighbors(m_indices, (unsigned char*)query.ptr<unsigned char>(0),
+                               cvflann::SearchParams(search_params));
 }
 
 
@@ -79,39 +148,73 @@ void ORBWordIndex::knnSearch(const Mat& query, vector<int>& indices,
  */
 bool ORBWordIndex::readVisualWords(string fileName)
 {
-    cout << "Reading the visual words file." << endl;
 
-    // Open the input file.
-    ifstream ifs;
-    ifs.open(fileName.c_str(), ios_base::binary);
+        // Open the input file.
+        ifstream ifs;
+        ifs.open(fileName.c_str(), ios_base::binary);
 
-    if (!ifs.good())
-    {
-        cout << "Could not open the input file." << endl;
-        return false;
-    }
-
-    unsigned char c;
-    while (ifs.good())
-    {
-        Mat line(1, 32, CV_8U);
-        for (unsigned i_col = 0; i_col < 32; ++i_col)
-        {
-            ifs.read((char*)&c, sizeof(unsigned char));
-            line.at<unsigned char>(0, i_col) = c;
-        }
         if (!ifs.good())
-            break;
-        words->push_back(line);
-    }
+        {
+                cerr << "Could not open the input word index file." << endl;
+                return false;
+        }
 
-    ifs.close();
+        unsigned char c;
+        while (ifs.good())
+        {
+                Mat line(1, 32, CV_8U);
+                for (unsigned i_col = 0; i_col < 32; ++i_col)
+                {
+                        ifs.read((char*)&c, sizeof(unsigned char));
+                        line.at<unsigned char>(0, i_col) = c;
+                }
+                if (!ifs.good())
+                        break;
+                words->push_back(line);
+        }
 
-    return true;
+        ifs.close();
+
+        return true;
+}
+
+/**
+ * @brief Save the list of visual words to an external file.
+ * @param fileName the path of the output file name.
+ * @return true on success else false.
+ */
+bool ORBWordIndex::saveVisualWords(string fileName)
+{
+        // Open the input file.
+        ofstream ofs;
+        ofs.open(fileName.c_str(), ios_base::binary);
+
+        if (!ofs.good())
+        {
+                cerr << "Could not open the output word index file." << endl;
+                return false;
+        }
+
+        unsigned char c;
+
+        for (int rowIdx = 0; rowIdx<words->rows; rowIdx++) {
+                Mat line = words->row(rowIdx);
+                for (unsigned i_col = 0; i_col < 32; ++i_col)
+                {
+                        c = line.at<char>(0, i_col);
+                        ofs.write((char*)&c, sizeof(unsigned char));
+                }
+        }
+
+        ofs.close();
+        return true;
 }
 
 const char* ORBWordIndex::messages[] = {
-  "Success",
-  "Could not access word index DB file",
-  "Word Index DB has the wrong number of rows"
+        "Success",
+        "Could not access word index DB file",
+        "Word Index DB has the wrong number of rows",
+        "Already training",
+        "Detector is not being trained",
+        "Failed to save Word Index DB"
 };

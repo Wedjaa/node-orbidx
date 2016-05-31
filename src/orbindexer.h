@@ -9,7 +9,13 @@ public:
   static void Init(Local<Object> target);
   static NAN_METHOD(IndexImage);
   static NAN_METHOD(InitWordIndex);
+  static NAN_METHOD(StartTraining);
+  static NAN_METHOD(TrainImage);
+  static NAN_METHOD(SaveTraining);
+  static NAN_METHOD(LoadTraining);
   ORBWordIndex * wordIndex;
+  cv::Mat trainingDescriptors;
+  bool trainingStarted;
 private:
   static const char * ToCString(const String::Utf8Value& str);
 };

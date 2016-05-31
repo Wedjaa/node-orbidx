@@ -33,16 +33,25 @@ public:
     ORBWordIndex();
     ~ORBWordIndex();
     void knnSearch(const cv::Mat &query, std::vector<int>& indices,
-                   std::vector<int> &dists, int knn);
-    int initialize(std::string visualWordsPath, int numberOfWords = 1000000);
+                   std::vector<int> &dists, int knn, u_int16_t search_params = 2000);
+    int initialize(std::string visualWordsPath, int numberOfWords = 0);
+    int startTraining();
+    bool wordPresent(cv::Mat word);
+    u_int32_t addTrainingFeatures(cv::Mat training_features);
+    int endTraining(std::string visualWordsPath = "/dev/null");
+    bool isTraining();
     const static int SUCCESS = 0;
     const static int WORD_DB_FILE_MISSING = 1;
     const static int WORD_DB_WRONG_ROW_SIZE = 2;
+    const static int ALREADY_TRAINING = 3;
+    const static int NOT_TRAINING = 4;
+    const static int SAVE_FAILED = 5;
     const static char * messages[];
 
 private:
     bool readVisualWords(std::string fileName);
-
+    bool saveVisualWords(std::string fileName);
+    bool training;
     cv::Mat *words;  // The matrix that stores the visual words.
     cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> > *kdIndex; // The kd-tree index.
 };
