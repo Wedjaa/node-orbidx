@@ -14,9 +14,17 @@ if (cluster.isMaster) {
     console.log(`Worker with PID ${worker.process.pid} exited.`)
   })
 } else {
-  var orbIndexer = new OrbIndexer();
+  var orbIndexer = new OrbIndexer({
+    minFeatureDistance: 20
+  });
 
-  var testImage = path.resolve(path.join(__dirname, 'image/windmill-1.jpg'));
+  var testImage1 = path.resolve(path.join(__dirname, 'image/test-image-1.jpg'));
+  var testImage2 = path.resolve(path.join(__dirname, 'image/test-image-2.jpg'));
+  var testImage3 = path.resolve(path.join(__dirname, 'image/test-image-3.jpg'));
+  var testImage4 = path.resolve(path.join(__dirname, 'image/test-image-4.jpg'));
+  var testImage5 = path.resolve(path.join(__dirname, 'image/test-image-5.jpg'));
+  var testImage6 = path.resolve(path.join(__dirname, 'image/test-image-6.jpg'));
+  var testImage7 = path.resolve(path.join(__dirname, 'image/test-image-7.jpg'));
   var testTraining = path.resolve(path.join(__dirname, 'training.dat'));
 
   var startResult = orbIndexer.startTraining();
@@ -25,10 +33,30 @@ if (cluster.isMaster) {
 
   var trainedIndex;
 
-  orbIndexer.trainImageFile(testImage)
+  orbIndexer.trainImageFile(testImage1)
     .then(function (result) {
       console.log('Training result: ', result);
-      return orbIndexer.trainImageFile(testImage);
+      return orbIndexer.trainImageFile(testImage2);
+    })
+    .then(function (result) {
+      console.log('Training result: ', result);
+      return orbIndexer.trainImageFile(testImage3);
+    })
+    .then(function (result) {
+      console.log('Training result: ', result);
+      return orbIndexer.trainImageFile(testImage4);
+    })
+    .then(function (result) {
+      console.log('Training result: ', result);
+      return orbIndexer.trainImageFile(testImage5);
+    })
+    .then(function (result) {
+      console.log('Training result: ', result);
+      return orbIndexer.trainImageFile(testImage6);
+    })
+    .then(function (result) {
+      console.log('Training result: ', result);
+      return orbIndexer.trainImageFile(testImage7);
     })
     .then(function (result) {
       console.log('Training result: ', result);
@@ -40,7 +68,7 @@ if (cluster.isMaster) {
     })
     .then(function(result) {
       console.log('Load index result: ', result);
-      return orbIndexer.indexImageFile('sample', testImage);
+      return orbIndexer.indexImageFile('sample', testImage1);
     })
     .then(function(result) {
       console.log('Image index result: ', result.length);

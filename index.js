@@ -17,8 +17,10 @@ var default_options = {
   fastThreshold: 20,
   maxKeypoints: 2000, // Max number of keypoints in the grid
   gridRows: 1,  // Grid Based Features - to make sure they are
-  gridCols: 1   // distributed in the image; use 1x1 to have the
-                // usual distribution
+  gridCols: 1,   // distributed in the image; use 1x1 to have the
+                // usual distribution, -1x-1 will use Pyramid
+  minFeatureDistance: 30 // The minumum distance of a feature from an existing
+                        // one before it's added to the visual word DB
 }
 
 var OrbIndexer = function (options) {
@@ -122,7 +124,8 @@ OrbIndexer.prototype = {
           _this.options.fastThreshold,
           _this.options.maxKeypoints,
           _this.options.gridRows,
-          _this.options.gridCols
+          _this.options.gridCols,
+          _this.options.minFeatureDistance
         );
       } catch (err) {
         reject(err);

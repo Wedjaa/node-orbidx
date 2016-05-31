@@ -44,7 +44,7 @@ ORBWordIndex::~ORBWordIndex()
 }
 
 bool ORBWordIndex::isTraining() {
-  return training;
+        return training;
 }
 
 int ORBWordIndex::startTraining() {
@@ -69,15 +69,47 @@ bool ORBWordIndex::wordPresent(Mat word) {
         return false;
 }
 
-u_int32_t ORBWordIndex::addTrainingFeatures(Mat training_features) {
-        int added_features = 0;
-        for (int feature_idx = 0; feature_idx<training_features.rows; feature_idx++) {
-                Mat feature = training_features.row(feature_idx);
-                if (!wordPresent(feature)) {
-                  words->push_back(feature);
-                  added_features++;
+u_int32_t ORBWordIndex::addTrainingFeatures(Mat training_features, unsigned min_distance) {
+        // Lock for adding words to our vocabulary
+        unique_lock<mutex> locker(trainingMutex);
+
+        cv::Mat newDescriptors;
+        if (words->rows==0) {
+                newDescriptors = training_features;
+        } else {
+                cvflann::Matrix<unsigned char> m_features
+                        ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
+
+                kdIndex = new cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> >
+                                  (m_features,cvflann::HierarchicalClusteringIndexParams(10, cvflann::FLANN_CENTERS_RANDOM, 8, 100));
+
+                kdIndex->buildIndex();
+
+
+                for (int i = 0; i < training_features.rows; ++i)
+                {
+
+                        std::vector<int> indices(1);
+                        std::vector<int> dists(1);
+
+                        knnSearch(training_features.row(i), indices, dists, 1);
+
+                        for (unsigned j = 0; j < indices.size(); ++j)
+                        {
+                                const unsigned i_distance = dists[j];
+                                if ( i_distance > min_distance ) {
+                                  newDescriptors.push_back(training_features.row(i));
+                                }
+                        }
+
                 }
         }
+
+        int added_features = newDescriptors.rows;
+        for (int feature_idx = 0; feature_idx<newDescriptors.rows; feature_idx++) {
+                words->push_back(newDescriptors.row(feature_idx));
+        }
+        locker.unlock();
         return added_features;
 }
 
@@ -91,6 +123,10 @@ int ORBWordIndex::endTraining(string visualWordsPath) {
                 delete kdIndex;
         }
 
+        // Make sure we wait for the last pending
+        // training to be complete if one is pending
+        unique_lock<mutex> locker(trainingMutex);
+
         cvflann::Matrix<unsigned char> m_features
                 ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
 
@@ -102,9 +138,10 @@ int ORBWordIndex::endTraining(string visualWordsPath) {
         training = false;
 
         if (!saveVisualWords(visualWordsPath)) {
+                locker.unlock();
                 return SAVE_FAILED;
         }
-
+        locker.unlock();
         return SUCCESS;
 }
 

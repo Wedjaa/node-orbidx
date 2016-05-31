@@ -77,14 +77,14 @@ void setupExtractor(int nfeatures, double scaleFactor, int nlevels, int edgeThre
                 // --> 3 ,fastThreshold
                 );
         if ( gridRows == 0 && gridCols == 0 ) {
-                std::cerr << "Using Pyramid Detector" << std::endl;
+                //std::cerr << "Using Pyramid Detector" << std::endl;
                 gridDetector = new cv::PyramidAdaptedFeatureDetector(orbDetector, 2);
         } else {
                 if ( gridRows == 1 && gridCols == 1 ) {
-                        std::cerr << "Using Straight Up ORB Detector" << std::endl;
+                        //std::cerr << "Using Straight Up ORB Detector" << std::endl;
                         gridDetector = orbDetector;
                 } else {
-                        std::cerr << "Using Grid Detector" << std::endl;
+                        //std::cerr << "Using Grid Detector" << std::endl;
                         gridDetector = new cv::GridAdaptedFeatureDetector(orbDetector, maxKeypoints, gridRows, gridCols);
                 }
         }
@@ -103,12 +103,6 @@ void Execute() {
 
                 unsigned int image_width = inputImage.cols;
                 unsigned int image_height = inputImage.rows;
-
-                std::vector<int> compression_params;
-
-                // CV_IMWRITE_PNG_COMPRESSION == 16
-                compression_params.push_back(16);
-                compression_params.push_back(2);
 
                 std::vector<cv::KeyPoint> keypoints;
                 cv::Mat descriptors;
@@ -604,11 +598,13 @@ public:
 AsyncImageTrainer(Nan::Callback *callback,
                   unsigned char * buff_imageData,
                   unsigned int i_imageSize,
-                  OrbIndexer * orbIndexer) :
+                  OrbIndexer * orbIndexer,
+                unsigned int minFeatureDistance) :
         Nan::AsyncWorker(callback),
         buff_imageData(buff_imageData),
         i_imageSize(i_imageSize),
         orbIndexer(orbIndexer),
+        minFeatureDistance(minFeatureDistance),
         success(false) {
 }
 
@@ -631,14 +627,14 @@ void setupExtractor(int nfeatures, double scaleFactor, int nlevels, int edgeThre
                 // --> 3 ,fastThreshold
                 );
         if ( gridRows == 0 && gridCols == 0 ) {
-                std::cerr << "Using Pyramid Detector" << std::endl;
+                //std::cerr << "Using Pyramid Detector" << std::endl;
                 gridDetector = new cv::PyramidAdaptedFeatureDetector(orbDetector, 2);
         } else {
                 if ( gridRows == 1 && gridCols == 1 ) {
-                        std::cerr << "Using Straight Up ORB Detector" << std::endl;
+                        //std::cerr << "Using Straight Up ORB Detector" << std::endl;
                         gridDetector = orbDetector;
                 } else {
-                        std::cerr << "Using Grid Detector" << std::endl;
+                        //std::cerr << "Using Grid Detector" << std::endl;
                         gridDetector = new cv::GridAdaptedFeatureDetector(orbDetector, maxKeypoints, gridRows, gridCols);
                 }
         }
@@ -652,16 +648,21 @@ void Execute() {
                 cv::InputArray image_array = cv::InputArray(image_data);
                 cv::Mat inputImage = cv::imdecode(image_array, 0);
 
+
                 resize(inputImage);
                 // cv::equalizeHist(inputImage, inputImage);
+
 
                 std::vector<cv::KeyPoint> keypoints;
                 cv::Mat descriptors;
 
+
                 gridDetector->detect(inputImage, keypoints);
                 orbDetector->compute(inputImage, keypoints, descriptors);
+
                 numDescriptors = descriptors.rows;
-                addedDescriptors = orbIndexer->wordIndex->addTrainingFeatures(descriptors);
+                addedDescriptors = orbIndexer->wordIndex->addTrainingFeatures(descriptors, minFeatureDistance);
+
                 success = true;
         }       catch (cv::Exception &e) {
                 error_message = e.what();
@@ -684,6 +685,7 @@ void HandleOKCallback() {
                 argv[0] = Nan::New(error_message.c_str()).ToLocalChecked();
                 argv[1] = Nan::Null();
         }
+        // std::cerr << "Exiting training" << std::endl;
         callback->Call(2, argv);
 }
 
@@ -714,6 +716,7 @@ void resize(cv::Mat image) {
 unsigned char * buff_imageData;
 unsigned int i_imageSize;
 OrbIndexer * orbIndexer;
+unsigned int minFeatureDistance;
 bool success;
 cv::FeatureDetector * gridDetector;
 cv::ORB * orbDetector;
@@ -812,7 +815,12 @@ NAN_METHOD(OrbIndexer::TrainImage) {
                 gridCols = info[14]->IntegerValue();
         }
 
-        AsyncImageTrainer * asyncImageTrainer = new AsyncImageTrainer(callback, image_buffer, image_size, orbIndexer);
+        int minFeatureDistance=30;
+        if ( info.Length() >= 16 ) {
+                minFeatureDistance = info[15]->IntegerValue();
+        }
+
+        AsyncImageTrainer * asyncImageTrainer = new AsyncImageTrainer(callback, image_buffer, image_size, orbIndexer, minFeatureDistance);
 
         asyncImageTrainer->setupExtractor(
                 nfeatures,

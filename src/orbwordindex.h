@@ -23,6 +23,7 @@
 #define PASTEC_ORBWORDINDEX_H
 
 #include <vector>
+#include <mutex>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/flann/flann.hpp>
@@ -37,7 +38,7 @@ public:
     int initialize(std::string visualWordsPath, int numberOfWords = 0);
     int startTraining();
     bool wordPresent(cv::Mat word);
-    u_int32_t addTrainingFeatures(cv::Mat training_features);
+    u_int32_t addTrainingFeatures(cv::Mat training_features, unsigned min_distance = MIN_DISTANCE_TRAINING);
     int endTraining(std::string visualWordsPath = "/dev/null");
     bool isTraining();
     const static int SUCCESS = 0;
@@ -49,9 +50,11 @@ public:
     const static char * messages[];
 
 private:
+    const static unsigned MIN_DISTANCE_TRAINING = 30;
     bool readVisualWords(std::string fileName);
     bool saveVisualWords(std::string fileName);
     bool training;
+    std::mutex trainingMutex;
     cv::Mat *words;  // The matrix that stores the visual words.
     cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> > *kdIndex; // The kd-tree index.
 };
