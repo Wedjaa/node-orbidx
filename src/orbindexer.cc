@@ -30,7 +30,6 @@ Nan::Persistent<FunctionTemplate> OrbIndexer::constructor;
 
 NAN_METHOD(OrbIndexer::New) {
         Nan::HandleScope scope;
-        std::cerr << "Creating new instance of OrbIndexer" << std::endl;
         if (!info.IsConstructCall())
                 return Nan::ThrowError("Use `new` to create instances of this object");
 
@@ -540,7 +539,6 @@ void Execute() {
                 if ( orbIndexer->wordIndex == NULL ) {
                         orbIndexer->wordIndex = new ORBWordIndex();
                 }
-		std::cerr << "Loading index from: " << index_path << std::endl;
                 orbIndexer->wordIndex->initialize(index_path);
 		success = true;
 
@@ -554,7 +552,6 @@ void Execute() {
 void HandleOKCallback() {
         Local<Value> argv[2];
         if (success) {
-		std::cerr << "Loaded index from: " << index_path << std::endl;
                 argv[0] = Nan::Null();
                 argv[1] = Nan::New(index_path).ToLocalChecked();
         } else {

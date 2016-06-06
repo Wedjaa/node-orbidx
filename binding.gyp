@@ -6,7 +6,7 @@
       "sources": [
         "src/init.cc",
         "src/orbindexer.cc",
-        "src/orbwordindex.cc"
+        "src/orbwordindex.cc",
       ],
 
       "libraries": [

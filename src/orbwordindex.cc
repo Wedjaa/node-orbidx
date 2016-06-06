@@ -149,10 +149,10 @@ int ORBWordIndex::endTraining(string visualWordsPath) {
 
 int ORBWordIndex::initialize(string visualWordsPath, int numberOfWords) {
 
-	std::cerr << "Loading visual words" << std::endl;
-        if (!readVisualWords(visualWordsPath))
+        if (!readVisualWords(visualWordsPath)) {
 		std::cerr << "DB File Missing: " << visualWordsPath << std::endl;
                 return WORD_DB_FILE_MISSING;
+	}
 
         if (numberOfWords>0 && words->rows != numberOfWords) {
 		std::cerr << "Wrong size" << std::endl;
@@ -162,14 +162,11 @@ int ORBWordIndex::initialize(string visualWordsPath, int numberOfWords) {
         cvflann::Matrix<unsigned char> m_features
                 ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
 
-	std::cerr << "Initialize KNN index" << std::endl;
         kdIndex = new cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> >
                           (m_features,cvflann::HierarchicalClusteringIndexParams(10, cvflann::FLANN_CENTERS_RANDOM, 8, 100));
 
-	std::cerr << "Build KNN index" << std::endl;
         kdIndex->buildIndex();
 
-	std::cerr << "Done" << std::endl;
         return SUCCESS;
 }
 
@@ -193,8 +190,11 @@ void ORBWordIndex::knnSearch(const Mat& query, vector<int>& indices,
  */
 bool ORBWordIndex::readVisualWords(string fileName)
 {
+	std::cerr << "Reading Visual Words: " << fileName << std::endl;
 	cv::FileStorage wordsFile(fileName, cv::FileStorage::READ);
 	wordsFile["words"] >> *words;
+	wordsFile.release();
+	std::cerr << "Words read!" << std::endl;
         return true;
 }
 
