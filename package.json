@@ -1,6 +1,6 @@
 {
   "name": "node-orbidx",
-  "version": "1.0.11",
+  "version": "1.0.15",
   "description": "Image Indexer Based on Pastec",
   "main": "index.js",
   "scripts": {
