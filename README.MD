@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a naive implementation of the **_Pastec ORB based image indexer_**, the words indexing class has been slightly remodelled, but it's pretty much the same logic _and code_  as the implementation from [Pastec GitHub Repository](https://github.com/Visu4link/pastec:Github).
+This is a naive implementation of the **_Pastec ORB based image indexer_**, the words indexing class has been slightly remodelled, but it's pretty much the same logic _and code_  as the implementation from [Pastec GitHub Repository](https://github.com/Visu4link/pastec).
 
 What this implementation is missing is the database/search part - this is because we believe that there are many other backends that can be used - and easily scaled, once the need hits you - without having to implement one from scratch.
 
