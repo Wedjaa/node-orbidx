@@ -32,6 +32,7 @@ ORBWordIndex::ORBWordIndex()
 {
         words = new Mat(0, 32, CV_8U); // The matrix that stores the visual words.
         kdIndex = NULL;
+        training = false;
 }
 
 
