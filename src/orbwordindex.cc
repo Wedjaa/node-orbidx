@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <opencv2/core/core.hpp>
 
 #include "orbwordindex.h"
 
@@ -148,21 +149,27 @@ int ORBWordIndex::endTraining(string visualWordsPath) {
 
 int ORBWordIndex::initialize(string visualWordsPath, int numberOfWords) {
 
+	std::cerr << "Loading visual words" << std::endl;
         if (!readVisualWords(visualWordsPath))
+		std::cerr << "DB File Missing: " << visualWordsPath << std::endl;
                 return WORD_DB_FILE_MISSING;
 
         if (numberOfWords>0 && words->rows != numberOfWords) {
+		std::cerr << "Wrong size" << std::endl;
                 return WORD_DB_WRONG_ROW_SIZE;
         }
 
         cvflann::Matrix<unsigned char> m_features
                 ((unsigned char*)words->ptr<unsigned char>(0), words->rows, words->cols);
 
+	std::cerr << "Initialize KNN index" << std::endl;
         kdIndex = new cvflann::HierarchicalClusteringIndex<cvflann::Hamming<unsigned char> >
                           (m_features,cvflann::HierarchicalClusteringIndexParams(10, cvflann::FLANN_CENTERS_RANDOM, 8, 100));
 
+	std::cerr << "Build KNN index" << std::endl;
         kdIndex->buildIndex();
 
+	std::cerr << "Done" << std::endl;
         return SUCCESS;
 }
 
@@ -186,33 +193,8 @@ void ORBWordIndex::knnSearch(const Mat& query, vector<int>& indices,
  */
 bool ORBWordIndex::readVisualWords(string fileName)
 {
-
-        // Open the input file.
-        ifstream ifs;
-        ifs.open(fileName.c_str(), ios_base::binary);
-
-        if (!ifs.good())
-        {
-                cerr << "Could not open the input word index file." << endl;
-                return false;
-        }
-
-        unsigned char c;
-        while (ifs.good())
-        {
-                Mat line(1, 32, CV_8U);
-                for (unsigned i_col = 0; i_col < 32; ++i_col)
-                {
-                        ifs.read((char*)&c, sizeof(unsigned char));
-                        line.at<unsigned char>(0, i_col) = c;
-                }
-                if (!ifs.good())
-                        break;
-                words->push_back(line);
-        }
-
-        ifs.close();
-
+	cv::FileStorage wordsFile(fileName, cv::FileStorage::READ);
+	wordsFile["words"] >> *words;
         return true;
 }
 
@@ -223,28 +205,8 @@ bool ORBWordIndex::readVisualWords(string fileName)
  */
 bool ORBWordIndex::saveVisualWords(string fileName)
 {
-        // Open the input file.
-        ofstream ofs;
-        ofs.open(fileName.c_str(), ios_base::binary);
-
-        if (!ofs.good())
-        {
-                cerr << "Could not open the output word index file." << endl;
-                return false;
-        }
-
-        unsigned char c;
-
-        for (int rowIdx = 0; rowIdx<words->rows; rowIdx++) {
-                Mat line = words->row(rowIdx);
-                for (unsigned i_col = 0; i_col < 32; ++i_col)
-                {
-                        c = line.at<char>(0, i_col);
-                        ofs.write((char*)&c, sizeof(unsigned char));
-                }
-        }
-
-        ofs.close();
+	cv::FileStorage wordsStorage(fileName, cv::FileStorage::WRITE);
+	wordsStorage << "words" <<  *words;
         return true;
 }
 

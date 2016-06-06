@@ -540,8 +540,9 @@ void Execute() {
                 if ( orbIndexer->wordIndex == NULL ) {
                         orbIndexer->wordIndex = new ORBWordIndex();
                 }
-
+		std::cerr << "Loading index from: " << index_path << std::endl;
                 orbIndexer->wordIndex->initialize(index_path);
+		success = true;
 
         } catch (cv::Exception &e) {
                 std::cerr << "Error: " << e.what() << std::endl;
@@ -553,9 +554,11 @@ void Execute() {
 void HandleOKCallback() {
         Local<Value> argv[2];
         if (success) {
+		std::cerr << "Loaded index from: " << index_path << std::endl;
                 argv[0] = Nan::Null();
                 argv[1] = Nan::New(index_path).ToLocalChecked();
         } else {
+		std::cerr << "Failed to load index from: " << index_path << std::endl;
                 argv[0] = Nan::New(error_message.c_str()).ToLocalChecked();
                 argv[1] = Nan::Null();
         }
