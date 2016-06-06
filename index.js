@@ -40,7 +40,7 @@ OrbIndexer.prototype = {
             console.log('Error: ' + err);
             return reject(new Error(err));
           }
-          return resolve(_this.options.wordIndexPath);
+          return res;
         }, _this.options.wordIndexPath);
       } catch (err) {
         console.log('Error: ' + err.message);
@@ -107,11 +107,11 @@ OrbIndexer.prototype = {
     var _this = this;
     return new Promise(function (resolve, reject) {
       try {
-        _this.orbIndexer.trainImage(function (err, hits) {
+        _this.orbIndexer.trainImage(function (err, message) {
             if (err) {
               return reject(new Error(err));
             }
-            resolve(hits);
+            resolve(message);
           }, imageBuffer, imageBuffer.length,
           _this.options.nfeatures,
           _this.options.scaleFactor,

@@ -1,13 +1,13 @@
 {
   "name": "node-orbidx",
   "version": "1.0.0",
-  "description": "",
+  "description": "Image Indexer Based on Pastec",
   "main": "index.js",
   "scripts": {
     "test": "node test/index.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Fabio 'MrWHO' Torchetti",
+  "license": "Apache-2.0",
   "dependencies": {
     "bluebird": "^3.4.0",
     "lodash.defaults": "^4.0.1",

@@ -363,7 +363,7 @@ void HandleOKCallback() {
         Local<Value> argv[2];
         if (success) {
                 argv[0] = Nan::Null();
-                argv[1] = Nan::New("Word Index Initialized").ToLocalChecked();
+                argv[1] = Nan::New(indexPath).ToLocalChecked();
         } else {
                 argv[0] = Nan::New(error_message.c_str()).ToLocalChecked();
                 argv[1] = Nan::Null();
@@ -554,7 +554,7 @@ void HandleOKCallback() {
         Local<Value> argv[2];
         if (success) {
                 argv[0] = Nan::Null();
-                argv[1] = Nan::New("Work Index Loaded").ToLocalChecked();
+                argv[1] = Nan::New(index_path).ToLocalChecked();
         } else {
                 argv[0] = Nan::New(error_message.c_str()).ToLocalChecked();
                 argv[1] = Nan::Null();
