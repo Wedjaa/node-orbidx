@@ -190,11 +190,9 @@ void ORBWordIndex::knnSearch(const Mat& query, vector<int>& indices,
  */
 bool ORBWordIndex::readVisualWords(string fileName)
 {
-	std::cerr << "Reading Visual Words: " << fileName << std::endl;
 	cv::FileStorage wordsFile(fileName, cv::FileStorage::READ);
 	wordsFile["words"] >> *words;
 	wordsFile.release();
-	std::cerr << "Words read!" << std::endl;
         return true;
 }
 
