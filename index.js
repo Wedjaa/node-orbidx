@@ -40,7 +40,7 @@ OrbIndexer.prototype = {
             console.log('Error: ' + err);
             return reject(new Error(err));
           }
-          return res;
+          resolve(res);
         }, _this.options.wordIndexPath);
       } catch (err) {
         console.log('Error: ' + err.message);
