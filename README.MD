@@ -52,38 +52,12 @@ What makes this a great tool for experimenting with ORB based visual search is t
 
 ### Indexer options
 
-- **nfeatures**: [_default_: **2000**] The maximum number of features (*descriptors* if you speak OpenCV) that will be extracted from an image;
-
-- **scaleFactor**: [_default_: **1.02**] The scale factor to be used to initialize the ORB feature detector. This value determines the resolution for the levels that will be generated for feature extraction, each level will have a resolution reduced by this factor. For a **scaleFactor** of **2**, as per ORB documentation example, each layer of the pyramid will have **4** times less pixels than the previous level;
-
-- **nlevels**: [_default_: **100**] How many pyramid levels to create to detect features. From the ORB documentation:
-> The smallest level will have linear size equal to `input_image_linear_size/pow(scaleFactor, nlevels)`
-
-- **edgeThreshold**: [_default_: **15**] This is the border around the images that will be ignored when looking for features, it should have roughly the same value as **patchSize**;
-
-- **firstLevel**: [_default_: **0**] The current ORB implementation in OpenCV expects this value to be always **0**;
-- **WTA_K**: [_default_: **2**] Number of points that are used to produce each element of the oriented BRIEF descriptor, check  [OpenCV ORB documentation](http://docs.opencv.org/2.4/modules/features2d/doc/feature_detection_and_description.html#orb-orb) for more details;
-
-- **scoreType**: [_default_: **0**] Type of scoring to be used when ranking the features, supported values are:
-  - **0** - _Harris Score_
-  - **1** - _Fast Score_
-
-
-- **patchSize**: [_default_: **15**] The patch size used to evaluate features;
-
-- **fastThreshold**: [_default_: **20**] This value is not used in the current implementation;
-
-- **maxKeypoints**: [_default_: **2000**] Max number of keypoints in the grid detector;
-
-- **gridRows**: [_default_: **1**] If this value or the value of  **gridCols** is greater than **1** the feature detection will use a grid system to make sure that features are detected in different parts of the submitted image. This seems initially a good idea, but try and expriment with it and see if it works with your set of images;
-
-- **gridCols**: [_default_: **1**] See **gridRows**;
-
-- **minFeatureDistance**: [_default_: **30**] This options is used during training to determine which features of a training image will be added to the visual words dictionary. The idea is that only features that have a distance from the already existing features in the dictionary of at least this number will be added to the dictionary;
-
-- **wordIndexPath**: [_default_: Use included PASTEC visual words DB] This option allows you to set the path to a visual words database that you have created using training or you got from some other source.
+See the [API](docs/api.md) for a detailed description of the options that can be passed to the constructor of the indexer.
 
 # More Documentation
 
 [A simple example of usage](docs/example.md)
+
 [Create your own visual words dictionary](docs/dictionary.md)
+
+[API Documentation](docs/api.md)
