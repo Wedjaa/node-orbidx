@@ -42,6 +42,8 @@ npm install node-orbidx
 const OrbIndexer = require('node-orbidx');
 
 var orbIndexer = new OrbIndexer();
+
+orbIndexer.initialize();
  ```
 
 This piece of code will create  an indexer with all the default settings; that means it will be using the same options for ORB features extraction as __PASTEC__ and the same visual word dictionary.
