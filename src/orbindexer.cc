@@ -135,6 +135,7 @@ void Execute() {
                                         newHit.i_wordId = i_wordId;
                                         newHit.str_imageId = str_imageId.c_str();
                                         newHit.i_angle = angle;
+                                        newHit.i_distance = dists[j];
                                         newHit.x = x;
                                         newHit.y = y;
                                         imageHits.push_back(newHit);
@@ -199,6 +200,8 @@ Local<Object> createHitObject(HitForward hit) {
                  Nan::New(hit.str_imageId).ToLocalChecked());
         Nan::Set(js_hit, Nan::New("angle").ToLocalChecked(),
                  Nan::New(hit.i_angle));
+        Nan::Set(js_hit, Nan::New("distance").ToLocalChecked(),
+                 Nan::New(hit.i_distance));
         Nan::Set(js_hit, Nan::New("x").ToLocalChecked(),
                  Nan::New(hit.x));
         Nan::Set(js_hit, Nan::New("y").ToLocalChecked(),

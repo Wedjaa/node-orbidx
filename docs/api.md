@@ -69,9 +69,10 @@ The array returned by the promise has the following elements:
 {
   image_id: "<image_id as passed to the method>",
   word_id: "<a numeric representation of the visual word>",
-  angle: "the angle of the feature matching the visual word",
-  x: "the ratio of the horizontal position of the feature",
-  y: "the ratio of the vertical position of the feature"
+  distance: "<the distance between the indexed image feature and the matched visual word>",
+  angle: "<the angle of the feature matching the visual word>",
+  x: "<the ratio of the horizontal position of the feature>",
+  y: "<the ratio of the vertical position of the feature>"
 }
 ```
 

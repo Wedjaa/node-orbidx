@@ -37,6 +37,7 @@ struct HitForward
     u_int32_t i_wordId;
     const char * str_imageId;
     u_int16_t i_angle;
+    u_int16_t i_distance;
     float x;
     float y;
 };

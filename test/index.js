@@ -25,6 +25,7 @@ if (cluster.isMaster) {
   var testImage5 = path.resolve(path.join(__dirname, 'image/test-image-5.jpg'));
   var testImage6 = path.resolve(path.join(__dirname, 'image/test-image-6.jpg'));
   var testImage7 = path.resolve(path.join(__dirname, 'image/test-image-7.jpg'));
+  var testImage8 = path.resolve(path.join(__dirname, 'image/test-image-8.jpg'));
   var testTraining = path.resolve(path.join(__dirname, 'training.dat'));
 
   var startResult = orbIndexer.startTraining();
@@ -68,15 +69,21 @@ if (cluster.isMaster) {
     })
     .then(function(result) {
       console.log('Load index result: ', result);
-      return orbIndexer.indexImageFile('sample', testImage1);
+      return orbIndexer.indexImageFile('sample', testImage8);
     })
     .then(function(result) {
-      console.log('Image index result: ', result.length);
+      result.sort(function(a, b) {
+        return a.distance - b.distance;
+      });
+      for (var idx=0,len=result.length; idx<len; idx++) {
+        console.log('[', idx, '] : ', result[idx].word_id, ' Dist: ', result[idx].distance);
+      }
     })
     .catch(function (err) {
       console.log('Error: ', err.message);
     })
     .finally(function () {
+      console.log('Done!');
       process.exit();
     });
 
